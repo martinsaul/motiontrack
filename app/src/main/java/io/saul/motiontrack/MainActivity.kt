@@ -70,6 +70,8 @@ class MainActivity : ComponentActivity() {
             navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
         )
         super.onCreate(savedInstanceState)
+        // adb shell am start -n io.saul.motiontrack/.MainActivity --ez demo true
+        if (BuildConfig.DEBUG && intent.getBooleanExtra("demo", false)) vm.demo = true
         setContent {
             MaterialTheme(colorScheme = darkColorScheme(background = Viz.surface, surface = Viz.surface, primary = Viz.blue)) {
                 MotionScreen(vm)
@@ -112,7 +114,7 @@ fun MotionScreen(vm: MotionViewModel) {
     }
     fun startOrAsk() {
         val granted = ContextCompat.checkSelfPermission(ctx, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-        if (granted) vm.start()
+        if (granted || vm.demo) vm.start()
         else launcher.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
     }
 
@@ -135,11 +137,11 @@ fun MotionScreen(vm: MotionViewModel) {
             Column(horizontalAlignment = Alignment.End, modifier = Modifier.padding(bottom = 8.dp)) {
                 Text(
                     when {
-                        !vm.running -> "Stopped"
+                        !vm.running -> if (vm.demo) "Stopped (demo)" else "Stopped"
                         status == null -> "Starting"
                         else -> when (status.mode) {
                             FusionMode.WAITING_FOR_GPS -> "Waiting for GPS fix"
-                            FusionMode.FUSED -> "GPS + IMU fused"
+                            FusionMode.FUSED -> if (vm.demo) "Demo: GPS + IMU fused" else "GPS + IMU fused"
                             FusionMode.DEAD_RECKONING -> "GPS lost: IMU only"
                             FusionMode.STATIONARY -> "Stationary"
                         }

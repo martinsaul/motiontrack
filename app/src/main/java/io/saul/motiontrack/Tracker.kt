@@ -18,11 +18,19 @@ import io.saul.motiontrack.fusion.FusionEngine
 import io.saul.motiontrack.fusion.Sample
 import io.saul.motiontrack.fusion.Status
 
+/** Something that feeds a [FusionEngine] and can be sampled for the UI. */
+interface MotionSource {
+    val sensorSummary: List<String>
+    fun start()
+    fun stop()
+    fun sample(): Pair<Sample, Status>
+}
+
 /**
  * Owns the sensor + GNSS subscriptions and feeds them into a [FusionEngine] on a dedicated thread.
  * All engine access goes through [lock].
  */
-class Tracker(context: Context) {
+class Tracker(context: Context) : MotionSource {
     private val sensors = context.getSystemService(SensorManager::class.java)
     private val location = context.getSystemService(LocationManager::class.java)
 
@@ -34,7 +42,7 @@ class Tracker(context: Context) {
     private val gyro = sensors.getDefaultSensor(Sensor.TYPE_GYROSCOPE)
     private val pressure = sensors.getDefaultSensor(Sensor.TYPE_PRESSURE)
 
-    val sensorSummary: List<String> = buildList {
+    override val sensorSummary: List<String> = buildList {
         add(if (linearAccel != null) "Linear accel" else "Accel (gravity removed in-app)")
         if (rotation != null) add(if (rotation.type == Sensor.TYPE_ROTATION_VECTOR) "Rotation vector" else "Game rotation")
         if (gyro != null) add("Gyroscope")
@@ -114,7 +122,7 @@ class Tracker(context: Context) {
     }
 
     @SuppressLint("MissingPermission") // caller checks ACCESS_FINE_LOCATION first
-    fun start() {
+    override fun start() {
         if (thread != null) return
         val t = HandlerThread("motion-sensors").also { it.start() }
         val h = Handler(t.looper)
@@ -132,7 +140,7 @@ class Tracker(context: Context) {
         location.registerGnssStatusCallback(gnssCallback, h)
     }
 
-    fun stop() {
+    override fun stop() {
         sensors.unregisterListener(sensorListener)
         location.removeUpdates(locationListener)
         location.unregisterGnssStatusCallback(gnssCallback)
@@ -141,9 +149,7 @@ class Tracker(context: Context) {
         hasRotation = false
     }
 
-    val running get() = thread != null
-
-    fun sample(): Pair<Sample, Status> {
+    override fun sample(): Pair<Sample, Status> {
         val now = SystemClock.elapsedRealtimeNanos()
         return synchronized(lock) { engine.sample(now) to engine.status(now) }
     }

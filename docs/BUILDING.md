@@ -48,16 +48,32 @@ $ANDROID_HOME/build-tools/<version>/apksigner verify --print-certs motiontrack.a
 Android only updates an installed app in place if the new APK is signed with the same key, so
 keep your keystore safe.
 
-## Trying it without moving
+## Demo drive
 
-Emulator motion sensors stay still, but you can feed it GPS fixes from the emulator console to
-watch the graphs and the GPS side of the filter:
+Debug builds include a scripted drive, so you can see the app work at a desk or on an emulator:
 
 ```bash
-# longitude latitude altitude satellites speed(knots)
-adb emu geo fix -75.0000 45.0000 70 8 0
-adb emu geo fix -75.0000 45.0002 70 8 39
+adb shell am start -n io.saul.motiontrack/.MainActivity --ez demo true
 ```
 
-Use the unit tests in `fusion/` to exercise the accelerometer side. They simulate drives with
-noisy GPS and IMU input.
+Press **Start**. The status line reads **Demo: ...** while it runs. The drive lasts about two
+minutes, then cruises:
+
+- pull away to 75 km/h and cruise
+- slow down for a 90 degree left turn
+- accelerate to 85 km/h, then brake hard to a stop
+- wait about 10 seconds
+- pull away and take a 60 degree right-hand bend
+
+The demo generates GPS fixes (1 Hz, with slowly wandering position error), accelerometer readings
+with vibration and a constant offset, gyroscope, and barometer, all in real time. They go through
+the same `FusionEngine` as real sensors. Release builds ignore the `demo` extra.
+
+The README screenshots come from this mode.
+
+## Testing on real hardware
+
+Nothing replaces a real drive. Mount the phone firmly, start before you set off, and compare the
+fused speed with the raw GPS dots and your vehicle's speedometer. Emulator motion sensors are not
+a substitute: the emulator smooths injected accelerometer values, and its GPS has no heading.
+Use the demo drive or the unit tests in `fusion/` instead.

@@ -6,8 +6,9 @@ Single module, Kotlin + Jetpack Compose. No dependencies beyond AndroidX and Kot
 app/src/main/java/io/saul/motiontrack/
   MainActivity.kt        Screen: hero speed, stats row, charts, controls; permission request
   MotionViewModel.kt     Session lifecycle, 10 Hz sampling loop, graph history (up to 4 h)
-  Tracker.kt             Sensor + GNSS subscriptions on a background thread; rotates
-                         acceleration into world axes and feeds the engine
+  Tracker.kt             MotionSource interface; real sensor + GNSS subscriptions on a
+                         background thread, rotating acceleration into world axes
+  SimulatedDrive.kt      Debug demo MotionSource: scripted drive with realistic noise
   fusion/
     AxisKalman.kt        3-state [position, velocity, offset] Kalman filter for one axis
     FusionEngine.kt      Origin, two AxisKalman filters, zero-velocity detector, derived values
@@ -15,7 +16,8 @@ app/src/main/java/io/saul/motiontrack/
     TimeChart.kt         Canvas time-series panel: auto-scaled axes, min/max decimation,
                          scrub crosshair, legend with live values
 app/src/test/java/io/saul/motiontrack/fusion/
-  FusionEngineTest.kt    Simulated drives: acceleration run, GPS outage, offset learning,
+  FusionEngineTest.kt    Simulated drives: acceleration run, lag-free speed tracking,
+                         GPS outage, offset learning,
                          stationary phone
 ```
 
@@ -30,6 +32,8 @@ app/src/test/java/io/saul/motiontrack/fusion/
                               MotionViewModel.history (main thread) --> Compose charts
 ```
 
+- `MotionViewModel` drives a `MotionSource`: `Tracker` for real sensors, or `SimulatedDrive` when a
+  debug build is started with the `demo` extra.
 - `Tracker` registers every listener on one `HandlerThread`, so sensor callbacks never block the
   UI. Every engine call is made under a single lock.
 - `MotionViewModel` takes a `Sample` and `Status` every 100 ms and appends the sample to an

@@ -4,6 +4,16 @@
 your phone's motion sensors. The result reacts faster than GPS alone and stays steadier than the
 accelerometer alone.
 
+<p align="center">
+  <img src="docs/screenshots/live.png" width="270" alt="Live graphs during a drive: distance, speed and acceleration">
+  <img src="docs/screenshots/scrub.png" width="270" alt="Dragging across the graphs shows a crosshair and the values at that instant">
+  <img src="docs/screenshots/stationary.png" width="270" alt="Stopped: speed held at zero, so no distance is added while parked">
+</p>
+
+<p align="center"><sub>Left to right: live view while driving, scrubbing back to a stop, and
+holding at zero while parked. Captured with the built-in <a href="docs/BUILDING.md#demo-drive">demo
+drive</a>, which feeds a scripted drive with realistic sensor noise through the real filter.</sub></p>
+
 ## Features
 
 - **Fused speed.** GPS is accurate but updates about once a second. The accelerometer updates

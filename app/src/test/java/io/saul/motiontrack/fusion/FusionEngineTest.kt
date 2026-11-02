@@ -82,4 +82,34 @@ class FusionEngineTest {
         assertTrue(e.stationary)
         assertTrue(abs(e.speed()) < 0.1)
     }
+
+    @Test
+    fun fusedSpeedHasNoLagThroughAccelerationAndBraking() {
+        val e = FusionEngine()
+        fun smooth(x: Double) = 0.5 - 0.5 * kotlin.math.cos(PI * x.coerceIn(0.0, 1.0))
+        // Pull away to 21 m/s over 12 s, cruise, then brake to 14 m/s over 6 s.
+        fun truth(t: Double) = when {
+            t < 8 -> 0.0
+            t < 20 -> 21 * smooth((t - 8) / 12)
+            t < 38 -> 21.0
+            t < 44 -> 21 - 7 * smooth((t - 38) / 6)
+            else -> 14.0
+        }
+        var pos = 0.0; var t = 0.0; var nextGps = 0.0; var prev = 0.0
+        val dt = 0.01
+        while (t < 50) {
+            val nanos = (t * 1e9).toLong()
+            val v = truth(t)
+            e.onGyro(nanos, 0.0, 0.0, 0.0)
+            e.onAccel(nanos, 0.0, (v - prev) / dt, 0.0)
+            prev = v
+            if (t >= nextGps) {
+                e.onGps(nanos, lat(pos), lon0, 5.0, v, if (v >= 0.5) 0.0 else Double.NaN, 0.5)
+                nextGps += 1.0
+            }
+            pos += v * dt
+            t += dt
+            if (t > 1) assertEquals("t=$t", v, e.speed(), 0.3)
+        }
+    }
 }

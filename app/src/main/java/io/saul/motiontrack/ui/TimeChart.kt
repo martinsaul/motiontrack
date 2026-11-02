@@ -165,7 +165,8 @@ fun TimeChart(
             }
 
             clipRect(gutter, top, size.width, top + plotH) {
-                for (s in series) {
+                // Raw dots go underneath so the fused line stays readable where they crowd together.
+                for (s in series.sortedBy { !it.dots }) {
                     if (s.dots) {
                         val r = 2.5.dp.toPx()
                         for (i in i0 until i1) {

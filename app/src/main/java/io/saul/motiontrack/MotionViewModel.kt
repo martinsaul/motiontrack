@@ -21,7 +21,11 @@ enum class TimeWindow(val label: String, val seconds: Double) {
 }
 
 class MotionViewModel(app: Application) : AndroidViewModel(app) {
-    val tracker = Tracker(app)
+    private val tracker = Tracker(app)
+    private var source: MotionSource = tracker
+
+    /** Debug builds only: run the scripted [SimulatedDrive] instead of real sensors. */
+    var demo = false
 
     /** Graph history; mutated and read on the main thread only. [revision] signals redraws. */
     val history = ArrayDeque<Sample>()
@@ -38,11 +42,12 @@ class MotionViewModel(app: Application) : AndroidViewModel(app) {
     fun start() {
         if (running) return
         history.clear()
-        tracker.start()
+        source = if (demo) SimulatedDrive() else tracker
+        source.start()
         running = true
         loop = viewModelScope.launch {
             while (isActive) {
-                val (s, st) = tracker.sample()
+                val (s, st) = source.sample()
                 history.addLast(s)
                 if (history.size > MAX_SAMPLES) history.removeFirst()
                 latest = s
@@ -55,7 +60,7 @@ class MotionViewModel(app: Application) : AndroidViewModel(app) {
 
     fun stop() {
         loop?.cancel(); loop = null
-        tracker.stop()
+        source.stop()
         running = false
     }
 
