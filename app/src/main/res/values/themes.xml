@@ -1,0 +1,7 @@
+<resources>
+    <style name="Theme.MotionTrack" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">#1a1a19</item>
+        <item name="android:statusBarColor">#1a1a19</item>
+        <item name="android:navigationBarColor">#1a1a19</item>
+    </style>
+</resources>
